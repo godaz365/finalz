@@ -1,0 +1,137 @@
+---
+title: "Electric Vehicle Population Data Analysis"
+author: "Zaire Goda"
+format: html
+---
+
+## Dataset Description
+
+The **Electric Vehicle Population Data** is provided by the Washington State Department of Licensing and includes information about all electric vehicles registered in the state. It includes both **Battery Electric Vehicles (BEVs)** and **Plug-in Hybrid Electric Vehicles (PHEVs)**. Key attributes in the dataset typically include:
+
+- **Make and Model**
+- **Electric Vehicle Type (BEV or PHEV)**
+- **Model Year**
+- **Vehicle Location (ZIP code or County)**
+- **Electric Range**
+- **VIN Prefix**
+
+Source: [Electric Vehicle Population Data](https://catalog.data.gov/dataset/electric-vehicle-population-data)
+
+---
+
+## Research Questions
+
+### 1. How does the distribution of electric vehicle types (BEVs vs. PHEVs) vary across different counties in Washington State, and what factors might explain these variations?
+
+The distribution of BEVs and PHEVs across Washington counties varies due to factors like income, infrastructure, and urbanization. Urban areas such as King County tend to have more BEVs because of better charging access and higher environmental awareness, while rural areas may favor PHEVs for their gas backup and longer driving range.
+
+Other factors include local EV incentives, commuting patterns, and public transportation availability. Counties with stronger green policies or shorter travel distances are more likely to adopt BEVs, whereas areas with limited charging access may rely more on PHEVs.
+
+### 2. What are the trends in electric vehicle registrations over time in Washington State, and how do these trends differ between BEVs and PHEVs?
+
+Electric vehicle registrations in Washington State have grown rapidly, reaching over 223,000 by the end of 2023. BEVs make up the majority, outnumbering PHEVs by about 3 to 1.
+
+This growth is driven by state incentives, expanding charging infrastructure, and rising consumer interest. Urban counties lead in total EVs, while rural areas show strong percentage growth, indicating widespread adoption across the state.
+
+---
+
+## Data Visualization and Statistical Analysis in R
+
+### Load Required Libraries
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(readr)
+library(broom)
+library(readxl)
+```
+
+### Load the Real Dataset from Excel
+
+```{r}
+# Load the real Electric Vehicle Population dataset from Excel
+ev_data <- read_excel("ev_population_filtered.xlsx")
+
+# Preview the data
+head(ev_data)
+
+# Clean and filter relevant columns
+df <- ev_data %>%
+  select(County, `Electric Vehicle Type`, `Model Year`, `Electric Range`) %>%
+  filter(!is.na(`Electric Range`), !is.na(`Electric Vehicle Type`), !is.na(`Model Year`))
+```
+
+---
+
+### Histogram: Distribution of Electric Vehicle Range
+
+```{r}
+ggplot(df, aes(x = `Electric Range`)) +
+  geom_histogram(bins = 20, fill = "skyblue", color = "black") +
+  labs(title = "Histogram of Electric Vehicle Range", x = "Electric Range (miles)", y = "Count")
+```
+
+---
+
+### Boxplot: Electric Range by Vehicle Type
+
+```{r}
+ggplot(df, aes(x = `Electric Vehicle Type`, y = `Electric Range`, fill = `Electric Vehicle Type`)) +
+  geom_boxplot() +
+  labs(title = "Boxplot of Electric Range by Vehicle Type", x = "Vehicle Type", y = "Electric Range") +
+  theme(legend.position = "none")
+```
+
+---
+
+### Scatterplot: Model Year vs. Electric Range
+
+```{r}
+ggplot(df, aes(x = `Model Year`, y = `Electric Range`, color = `Electric Vehicle Type`)) +
+  geom_point(alpha = 0.7) +
+  labs(title = "Scatterplot of Model Year vs. Electric Range", x = "Model Year", y = "Electric Range")
+```
+
+---
+
+### Summary Statistics by Vehicle Type
+
+```{r}
+df %>%
+  group_by(`Electric Vehicle Type`) %>%
+  summarise(
+    Mean = mean(`Electric Range`, na.rm = TRUE),
+    SD = sd(`Electric Range`, na.rm = TRUE),
+    Min = min(`Electric Range`, na.rm = TRUE),
+    Max = max(`Electric Range`, na.rm = TRUE)
+  )
+```
+
+---
+
+### Two-Sample T-Test: Comparing Electric Ranges
+
+```{r}
+t_test_result <- t.test(`Electric Range` ~ `Electric Vehicle Type`, data = df)
+t_test_result
+```
+
+**Interpretation**:  
+- If the p-value is greater than 0.05, there is no statistically significant difference in electric range between BEVs and PHEVs.
+
+---
+
+### Linear Regression: Predicting Electric Range
+
+```{r}
+lm_model <- lm(`Electric Range` ~ `Model Year` + `Electric Vehicle Type`, data = df)
+summary(lm_model)
+```
+
+**Interpretation**:  
+- This regression shows the influence of model year and vehicle type on electric range.
+- Significant predictors will have low p-values (typically < 0.05).
+
+---
